@@ -1,5 +1,5 @@
 {
-  "author": "Richard Moore <me@ricmoo.com>",
+  "author": "Axiomesh",
   "browser": {
     "./lib.esm/crypto/crypto.js": "./lib.esm/crypto/crypto-browser.js",
     "./lib.esm/providers/provider-ipcsocket.js": "./lib.esm/providers/provider-ipcsocket-browser.js",
@@ -17,7 +17,7 @@
     "tslib": "2.4.0",
     "ws": "8.5.0"
   },
-  "description": "A complete and compact Ethereum library, for dapps, wallets and any other tools.",
+  "description": "A complete js sdk to contact with Axiom, it is currently forked from ethers.js, but soon will have more unique functions",
   "devDependencies": {
     "@rollup/plugin-node-resolve": "15.0.2",
     "@types/mocha": "9.1.1",
@@ -32,7 +32,6 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "ethereum": "donations.ethers.eth",
   "exports": {
     ".": {
       "import": "./lib.esm/index.js",
@@ -83,34 +82,24 @@
       "default": "./lib.commonjs/wordlists/index.js"
     }
   },
-  "funding": [
-    {
-      "type": "individual",
-      "url": "https://github.com/sponsors/ethers-io/"
-    },
-    {
-      "type": "individual",
-      "url": "https://www.buymeacoffee.com/ricmoo"
-    }
-  ],
-  "gitHead": "25fef4f8d756f5bbf5a2a05e38233248a8eb43ac",
-  "homepage": "https://ethers.org",
+  "gitHead": "ac85fc849d3bb1d24097201f6f0beecda028b5f9",
   "keywords": [
     "ethereum",
     "ethers",
-    "ethersjs"
+    "axiom",
+    "axiomesh"
   ],
   "license": "MIT",
   "main": "./lib.commonjs/index.js",
   "module": "./lib.esm/index.js",
-  "name": "ethers",
+  "name": "@axiomesh/axiom",
   "publishConfig": {
     "access": "public",
     "tag": "latest"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/ethers-io/ethers.js.git"
+    "url": "https://github.com/axiomesh/axiom.js.git"
   },
   "scripts": {
     "_build-dist": "rollup -c && uglifyjs ./dist/ethers.js -o ./dist/ethers.min.js && uglifyjs ./dist/ethers.umd.js -o ./dist/ethers.umd.min.js && uglifyjs ./dist/wordlists-extra.js -o ./dist/wordlists-extra.min.js",
@@ -131,5 +120,5 @@
     "test-esm": "mocha --reporter ./reporter.cjs ./lib.esm/_tests/test-*.js"
   },
   "sideEffects": false,
-  "version": "6.7.0"
+  "version": "0.0.1"
 }
