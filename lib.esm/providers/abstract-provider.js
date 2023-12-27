@@ -390,7 +390,7 @@ export class AbstractProvider {
         }
         switch (blockTag) {
             case "earliest":
-                return "0x0";
+                return "0x1";
             case "latest":
             case "pending":
             case "safe":
