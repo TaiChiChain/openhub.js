@@ -419,6 +419,9 @@ export class EtherscanProvider extends AbstractProvider {
 
             case "getGasPrice":
                 return this.fetch("proxy", { action: "eth_gasPrice" });
+            
+            case "getIncentiveAddress":
+                return this.fetch("proxy", { action: "axm_getIncentiveAddress" });
 
             case "getBalance":
                 // Returns base-10 result

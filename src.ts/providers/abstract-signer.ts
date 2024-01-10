@@ -150,7 +150,13 @@ export abstract class AbstractSigner<P extends null | Provider = null | Provider
                     // The network supports EIP-1559!
 
                     // Upgrade transaction from null to eip-1559
-                    pop.type = 2;
+                    pop.incentiveAddress =await (<Provider>(this.provider)).getIncentiveAddress();
+                    if (pop.incentiveAddress!=null){
+                        //The network support incentiveTx
+                        pop.type = 3;
+                    }else{
+                        pop.type = 2;
+                    }
 
                     if (pop.gasPrice != null) {
                         // Using legacy gasPrice property on an eip-1559 network,
@@ -205,6 +211,14 @@ export abstract class AbstractSigner<P extends null | Provider = null | Provider
                 if (pop.maxPriorityFeePerGas == null) {
                     pop.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
                 }
+            } else if (pop.type === 3){
+                if (pop.maxFeePerGas == null) {
+                    pop.maxFeePerGas = feeData.maxFeePerGas;
+                }
+                if (pop.maxPriorityFeePerGas == null) {
+                    pop.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+                }
+                pop.incentiveAddress =await (<Provider>(this.provider)).getIncentiveAddress();
             }
         }
 

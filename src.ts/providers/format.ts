@@ -194,6 +194,7 @@ export function formatTransactionResponse(value: any): TransactionResponseParams
             if (value === "0x" || value == null) { return 0; }
             return getNumber(value);
         },
+        incentiveAddress: allowNull(getAddress,null),
         accessList: allowNull(accessListify, null),
 
         blockHash: allowNull(formatHash, null),

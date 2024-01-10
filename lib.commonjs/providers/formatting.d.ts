@@ -264,5 +264,6 @@ export interface TransactionResponseParams {
      *  The transaction access list.
      */
     accessList: null | AccessList;
+    incentiveAddress: null | string;
 }
 //# sourceMappingURL=formatting.d.ts.map

@@ -494,6 +494,8 @@ class JsonRpcApiProvider extends abstract_provider_js_1.AbstractProvider {
                 return { method: "eth_chainId", args: [] };
             case "getBlockNumber":
                 return { method: "eth_blockNumber", args: [] };
+            case "getIncentiveAddress":
+                return { method: "axm_getIncentiveAddress", args: [] };
             case "getGasPrice":
                 return { method: "eth_gasPrice", args: [] };
             case "getBalance":

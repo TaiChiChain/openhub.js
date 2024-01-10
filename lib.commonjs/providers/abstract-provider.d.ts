@@ -226,6 +226,8 @@ export type PerformActionRequest = {
 } | {
     method: "getTransactionResult";
     hash: string;
+} | {
+    method: "getIncentiveAddress";
 };
 /**
  *  Options for configuring some internal aspects of an [[AbstractProvider]].
@@ -322,6 +324,7 @@ export declare class AbstractProvider implements Provider {
      */
     _perform<T = any>(req: PerformActionRequest): Promise<T>;
     getBlockNumber(): Promise<number>;
+    getIncentiveAddress(): Promise<string>;
     /**
      *  Returns or resolves to the address for %%address%%, resolving ENS
      *  names and [[Addressable]] objects and returning if already an

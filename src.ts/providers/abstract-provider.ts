@@ -391,7 +391,9 @@ export type PerformActionRequest = {
 } | {
     method: "getTransactionResult",
     hash: string
-};
+} | {
+    method: "getIncentiveAddress"
+} ;
 
 type _PerformAccountRequest = {
     method: "getBalance" | "getTransactionCount" | "getCode"
@@ -687,6 +689,12 @@ export class AbstractProvider implements Provider {
         const blockNumber = getNumber(await this.#perform({ method: "getBlockNumber" }), "%response");
         if (this.#lastBlockNumber >= 0) { this.#lastBlockNumber = blockNumber; }
         return blockNumber;
+    }
+
+
+    async getIncentiveAddress(): Promise<string> {
+        const incentiveAddress = await this.#perform({ method: "getIncentiveAddress" })
+        return incentiveAddress
     }
 
     /**

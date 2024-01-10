@@ -97,6 +97,11 @@ export interface TransactionLike<A = string> {
      *  The access list for berlin and london transactions.
      */
     accessList?: null | AccessListish;
+    
+    /**
+     *  The incentiveAddress for incentiveTx
+     */
+    incentiveAddress?: null | A;
 }
 
 function handleAddress(value: string): null | string {
@@ -291,6 +296,43 @@ function _parseEip1559(data: Uint8Array): TransactionLike {
     return tx;
 }
 
+function _parseIncentiveTx(data: Uint8Array): TransactionLike {
+    const fields: any = decodeRlp(getBytes(data).slice(1));
+
+    assertArgument(Array.isArray(fields) && (fields.length === 10 || fields.length === 13),
+        "invalid field count for transaction type: 2", "data", hexlify(data));
+
+    const maxPriorityFeePerGas = handleUint(fields[2], "maxPriorityFeePerGas");
+    const maxFeePerGas = handleUint(fields[3], "maxFeePerGas");
+    const tx: TransactionLike = {
+        type:                  3,
+        chainId:               handleUint(fields[0], "chainId"),
+        nonce:                 handleNumber(fields[1], "nonce"),
+        maxPriorityFeePerGas:  maxPriorityFeePerGas,
+        maxFeePerGas:          maxFeePerGas,
+        gasPrice:              null,
+        gasLimit:              handleUint(fields[4], "gasLimit"),
+        to:                    handleAddress(fields[5]),
+        value:                 handleUint(fields[6], "value"),
+        data:                  hexlify(fields[7]),
+        accessList:            handleAccessList(fields[8], "accessList"),
+        incentiveAddress:       handleAddress(fields[9]),
+    };
+
+    // Unsigned Incentive Transaction
+    if (fields.length === 10) { return tx; }
+
+    tx.hash = keccak256(data);
+
+    _parseEipSignature(tx, fields.slice(10));
+
+    return tx;
+}
+
+
+
+
+
 function _serializeEip1559(tx: TransactionLike, sig?: Signature): string {
     const fields: Array<any> = [
         formatNumber(tx.chainId || 0, "chainId"),
@@ -311,6 +353,29 @@ function _serializeEip1559(tx: TransactionLike, sig?: Signature): string {
     }
 
     return concat([ "0x02", encodeRlp(fields)]);
+}
+
+function _serializeIncentiveTx(tx: TransactionLike, sig?: Signature): string {
+    const fields: Array<any> = [
+        formatNumber(tx.chainId || 0, "chainId"),
+        formatNumber(tx.nonce || 0, "nonce"),
+        formatNumber(tx.maxPriorityFeePerGas || 0, "maxPriorityFeePerGas"),
+        formatNumber(tx.maxFeePerGas || 0, "maxFeePerGas"),
+        formatNumber(tx.gasLimit || 0, "gasLimit"),
+        ((tx.to != null) ? getAddress(tx.to): "0x"),
+        formatNumber(tx.value || 0, "value"),
+        (tx.data || "0x"),
+        (formatAccessList(tx.accessList || [])),
+        ((tx.incentiveAddress != null) ? getAddress(tx.incentiveAddress): "0x"),
+    ];
+
+    if (sig) {
+        fields.push(formatNumber(sig.yParity, "yParity"));
+        fields.push(toBeArray(sig.r));
+        fields.push(toBeArray(sig.s));
+    }
+
+    return concat([ "0x03", encodeRlp(fields)]);
 }
 
 function _parseEip2930(data: Uint8Array): TransactionLike {
@@ -388,6 +453,7 @@ export class Transaction implements TransactionLike<string> {
     #chainId: bigint;
     #sig: null | Signature;
     #accessList: null | AccessList;
+    #incentiveAddress:null | string;
 
     /**
      *  The transaction type.
@@ -410,6 +476,9 @@ export class Transaction implements TransactionLike<string> {
             case 2: case "london": case "eip-1559":
                 this.#type = 2;
                 break;
+            case 3: case "incentiveTx":
+                this.#type = 3;
+                break;
             default:
                 assertArgument(false, "unsupported transaction type", "type", value);
         }
@@ -423,6 +492,7 @@ export class Transaction implements TransactionLike<string> {
             case 0: return "legacy";
             case 1: return "eip-2930";
             case 2: return "eip-1559";
+            case 3: return "incentiveTx";
         }
 
         return null;
@@ -543,6 +613,17 @@ export class Transaction implements TransactionLike<string> {
         this.#accessList = (value == null) ? null: accessListify(value);
     }
 
+
+     /**
+     *  The ``to`` address for the transaction or ``null`` if the
+     *  transaction is an ``init`` transaction.
+     */
+     get incentiveAddress(): null | string { return this.#incentiveAddress; }
+     set incentiveAddress(value: null | string) {
+         this.#incentiveAddress = (value == null) ? null: getAddress(value);
+     }
+
+
     /**
      *  Creates a new Transaction with default values.
      */
@@ -559,6 +640,7 @@ export class Transaction implements TransactionLike<string> {
         this.#chainId = BigInt(0);
         this.#sig = null;
         this.#accessList = null;
+        this.#incentiveAddress=null;
     }
 
     /**
@@ -622,6 +704,9 @@ export class Transaction implements TransactionLike<string> {
                 return _serializeEip2930(this, this.signature);
             case 2:
                 return _serializeEip1559(this, this.signature);
+            case 3:
+                return _serializeIncentiveTx(this,this.signature);
+                
         }
 
         assert(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: ".serialized" });
@@ -641,6 +726,8 @@ export class Transaction implements TransactionLike<string> {
                 return _serializeEip2930(this);
             case 2:
                 return _serializeEip1559(this);
+            case 3:
+                return _serializeIncentiveTx(this);
         }
 
         assert(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: ".unsignedSerialized" });
@@ -790,6 +877,7 @@ export class Transaction implements TransactionLike<string> {
             switch(payload[0]) {
                 case 1: return Transaction.from(_parseEip2930(payload));
                 case 2: return Transaction.from(_parseEip1559(payload));
+                case 3: return Transaction.from(_parseIncentiveTx(payload));
             }
             assert(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: "from" });
         }
@@ -807,6 +895,7 @@ export class Transaction implements TransactionLike<string> {
         if (tx.chainId != null) { result.chainId = tx.chainId; }
         if (tx.signature != null) { result.signature = Signature.from(tx.signature); }
         if (tx.accessList != null) { result.accessList = tx.accessList; }
+        if (tx.incentiveAddress!=null) {result.incentiveAddress=tx.incentiveAddress}
 
         if (tx.hash != null) {
             assertArgument(result.isSigned(), "unsigned transaction cannot define hash", "tx", tx);

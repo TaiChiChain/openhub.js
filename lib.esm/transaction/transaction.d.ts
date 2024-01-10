@@ -64,6 +64,10 @@ export interface TransactionLike<A = string> {
      *  The access list for berlin and london transactions.
      */
     accessList?: null | AccessListish;
+    /**
+     *  The incentiveAddress for incentiveTx
+     */
+    incentiveAddress?: null | A;
 }
 /**
  *  A **Transaction** describes an operation to be executed on
@@ -157,6 +161,12 @@ export declare class Transaction implements TransactionLike<string> {
      */
     get accessList(): null | AccessList;
     set accessList(value: null | AccessListish);
+    /**
+    *  The ``to`` address for the transaction or ``null`` if the
+    *  transaction is an ``init`` transaction.
+    */
+    get incentiveAddress(): null | string;
+    set incentiveAddress(value: null | string);
     /**
      *  Creates a new Transaction with default values.
      */

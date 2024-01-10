@@ -109,7 +109,14 @@ export class AbstractSigner {
                 if (feeData.maxFeePerGas != null && feeData.maxPriorityFeePerGas != null) {
                     // The network supports EIP-1559!
                     // Upgrade transaction from null to eip-1559
-                    pop.type = 2;
+                    pop.incentiveAddress = await (this.provider).getIncentiveAddress();
+                    if (pop.incentiveAddress != null) {
+                        //The network support incentiveTx
+                        pop.type = 3;
+                    }
+                    else {
+                        pop.type = 2;
+                    }
                     if (pop.gasPrice != null) {
                         // Using legacy gasPrice property on an eip-1559 network,
                         // so use gasPrice as both fee properties
@@ -158,6 +165,15 @@ export class AbstractSigner {
                 if (pop.maxPriorityFeePerGas == null) {
                     pop.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
                 }
+            }
+            else if (pop.type === 3) {
+                if (pop.maxFeePerGas == null) {
+                    pop.maxFeePerGas = feeData.maxFeePerGas;
+                }
+                if (pop.maxPriorityFeePerGas == null) {
+                    pop.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+                }
+                pop.incentiveAddress = await (this.provider).getIncentiveAddress();
             }
         }
         //@TOOD: Don't await all over the place; save them up for
