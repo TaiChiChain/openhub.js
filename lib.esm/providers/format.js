@@ -171,6 +171,7 @@ export function formatTransactionResponse(value) {
             }
             return getNumber(value);
         },
+        incentiveAddress: allowNull(getAddress, null),
         accessList: allowNull(accessListify, null),
         blockHash: allowNull(formatHash, null),
         blockNumber: allowNull(getNumber, null),

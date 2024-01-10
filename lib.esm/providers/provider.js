@@ -840,6 +840,7 @@ export class TransactionResponse {
      *  support it, otherwise ``null``.
      */
     accessList;
+    incentiveAddress;
     #startBlock;
     /**
      *  @_ignore:
@@ -863,6 +864,7 @@ export class TransactionResponse {
         this.chainId = tx.chainId;
         this.signature = tx.signature;
         this.accessList = (tx.accessList != null) ? tx.accessList : null;
+        this.incentiveAddress = tx.incentiveAddress;
         this.#startBlock = -1;
     }
     /**

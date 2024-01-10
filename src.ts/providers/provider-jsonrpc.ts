@@ -789,6 +789,10 @@ export abstract class JsonRpcApiProvider extends AbstractProvider {
             case "getBlockNumber":
                 return { method: "eth_blockNumber", args: [ ] };
 
+            case "getIncentiveAddress":
+                return { method: "axm_getIncentiveAddress", args: [ ] };
+
+
             case "getGasPrice":
                 return { method: "eth_gasPrice", args: [] };
 

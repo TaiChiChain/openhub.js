@@ -376,6 +376,10 @@ class AbstractProvider {
         }
         return blockNumber;
     }
+    async getIncentiveAddress() {
+        const incentiveAddress = await this.#perform({ method: "getIncentiveAddress" });
+        return incentiveAddress;
+    }
     /**
      *  Returns or resolves to the address for %%address%%, resolving ENS
      *  names and [[Addressable]] objects and returning if already an

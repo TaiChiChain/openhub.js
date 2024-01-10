@@ -755,6 +755,7 @@ export declare class TransactionResponse implements TransactionLike<string>, Tra
      *  support it, otherwise ``null``.
      */
     readonly accessList: null | AccessList;
+    readonly incentiveAddress: null | string;
     /**
      *  @_ignore:
      */
@@ -1018,6 +1019,10 @@ export interface Provider extends ContractRunner, EventEmitterable<ProviderEvent
      *  Get the best guess at the recommended [[FeeData]].
      */
     getFeeData(): Promise<FeeData>;
+    /**
+     *  Get the IncentiveAddress from node
+     */
+    getIncentiveAddress(): Promise<string>;
     /**
      *  Get the account balance (in wei) of %%address%%. If %%blockTag%%
      *  is specified and the node supports archive access for that

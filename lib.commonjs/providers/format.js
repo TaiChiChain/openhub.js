@@ -185,6 +185,7 @@ function formatTransactionResponse(value) {
             }
             return (0, index_js_4.getNumber)(value);
         },
+        incentiveAddress: allowNull(index_js_1.getAddress, null),
         accessList: allowNull(index_js_3.accessListify, null),
         blockHash: allowNull(formatHash, null),
         blockNumber: allowNull(index_js_4.getNumber, null),

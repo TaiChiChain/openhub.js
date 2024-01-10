@@ -15716,6 +15716,7 @@ function formatTransactionResponse(value) {
             }
             return getNumber(value);
         },
+        incentiveAddress:allowNull(getAddress,null),
         accessList: allowNull(accessListify, null),
         blockHash: allowNull(formatHash, null),
         blockNumber: allowNull(getNumber, null),
@@ -18092,7 +18093,14 @@ class AbstractSigner {
                 if (feeData.maxFeePerGas != null && feeData.maxPriorityFeePerGas != null) {
                     // The network supports EIP-1559!
                     // Upgrade transaction from null to eip-1559
-                    pop.type = 2;
+                    
+                    pop.incentiveAddress = await (this.provider).getIncentiveAddress();
+                    if (pop.incentiveAddress!=null){
+                        //The network support incentiveTx
+                        pop.type = 3;
+                    }else{
+                        pop.type = 2;
+                    }
                     if (pop.gasPrice != null) {
                         // Using legacy gasPrice property on an eip-1559 network,
                         // so use gasPrice as both fee properties
@@ -18141,6 +18149,7 @@ class AbstractSigner {
                 if (pop.maxPriorityFeePerGas == null) {
                     pop.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
                 }
+                pop.incentiveAddress = await (this.provider).getIncentiveAddress();
             }
         }
         //@TOOD: Don't await all over the place; save them up for
@@ -18891,6 +18900,8 @@ class JsonRpcApiProvider extends AbstractProvider {
                 return { method: "eth_chainId", args: [] };
             case "getBlockNumber":
                 return { method: "eth_blockNumber", args: [] };
+            case "getIncentiveAddress":
+                return { method: "axm_getIncentiveAddress", args: [] };
             case "getGasPrice":
                 return { method: "eth_gasPrice", args: [] };
             case "getBalance":
@@ -19829,6 +19840,8 @@ class EtherscanProvider extends AbstractProvider {
                 return this.network.chainId;
             case "getBlockNumber":
                 return this.fetch("proxy", { action: "eth_blockNumber" });
+            case "getIncentiveAddress":
+                return this.fetch("proxy", { action: "axm_getIncentiveAddress" });
             case "getGasPrice":
                 return this.fetch("proxy", { action: "eth_gasPrice" });
             case "getBalance":
@@ -20880,6 +20893,8 @@ class FallbackProvider extends AbstractProvider {
             }
             case "getBlockNumber":
                 return await provider.getBlockNumber();
+            case "getIncentiveAddress":
+                return await provider.getIncentiveAddress();
             case "getCode":
                 return await provider.getCode(req.address, req.blockTag);
             case "getGasPrice":
@@ -21040,6 +21055,7 @@ class FallbackProvider extends AbstractProvider {
                 return checkQuorum(this.quorum, results);
             case "call":
             case "chainId":
+            case "getIncentiveAddress":
             case "getBalance":
             case "getTransactionCount":
             case "getCode":

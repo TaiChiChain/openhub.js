@@ -1259,6 +1259,8 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
      */
     readonly accessList!: null | AccessList;
 
+    readonly incentiveAddress!: null | string;
+
     #startBlock: number;
 
     /**
@@ -1291,6 +1293,8 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
         this.signature = tx.signature;
 
         this.accessList = (tx.accessList != null) ? tx.accessList: null;
+
+        this.incentiveAddress = tx.incentiveAddress;
 
         this.#startBlock = -1;
     }
@@ -1838,6 +1842,11 @@ export interface Provider extends ContractRunner, EventEmitterable<ProviderEvent
      *  Get the best guess at the recommended [[FeeData]].
      */
     getFeeData(): Promise<FeeData>;
+
+    /**
+     *  Get the IncentiveAddress from node
+     */
+    getIncentiveAddress(): Promise<string>;
 
 
     ////////////////////

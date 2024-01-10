@@ -184,6 +184,33 @@ function _parseEip1559(data) {
     _parseEipSignature(tx, fields.slice(9));
     return tx;
 }
+function _parseIncentiveTx(data) {
+    const fields = (0, index_js_3.decodeRlp)((0, index_js_3.getBytes)(data).slice(1));
+    (0, index_js_3.assertArgument)(Array.isArray(fields) && (fields.length === 10 || fields.length === 13), "invalid field count for transaction type: 2", "data", (0, index_js_3.hexlify)(data));
+    const maxPriorityFeePerGas = handleUint(fields[2], "maxPriorityFeePerGas");
+    const maxFeePerGas = handleUint(fields[3], "maxFeePerGas");
+    const tx = {
+        type: 3,
+        chainId: handleUint(fields[0], "chainId"),
+        nonce: handleNumber(fields[1], "nonce"),
+        maxPriorityFeePerGas: maxPriorityFeePerGas,
+        maxFeePerGas: maxFeePerGas,
+        gasPrice: null,
+        gasLimit: handleUint(fields[4], "gasLimit"),
+        to: handleAddress(fields[5]),
+        value: handleUint(fields[6], "value"),
+        data: (0, index_js_3.hexlify)(fields[7]),
+        accessList: handleAccessList(fields[8], "accessList"),
+        incentiveAddress: handleAddress(fields[9]),
+    };
+    // Unsigned Incentive Transaction
+    if (fields.length === 10) {
+        return tx;
+    }
+    tx.hash = (0, index_js_2.keccak256)(data);
+    _parseEipSignature(tx, fields.slice(10));
+    return tx;
+}
 function _serializeEip1559(tx, sig) {
     const fields = [
         formatNumber(tx.chainId || 0, "chainId"),
@@ -202,6 +229,26 @@ function _serializeEip1559(tx, sig) {
         fields.push((0, index_js_3.toBeArray)(sig.s));
     }
     return (0, index_js_3.concat)(["0x02", (0, index_js_3.encodeRlp)(fields)]);
+}
+function _serializeIncentiveTx(tx, sig) {
+    const fields = [
+        formatNumber(tx.chainId || 0, "chainId"),
+        formatNumber(tx.nonce || 0, "nonce"),
+        formatNumber(tx.maxPriorityFeePerGas || 0, "maxPriorityFeePerGas"),
+        formatNumber(tx.maxFeePerGas || 0, "maxFeePerGas"),
+        formatNumber(tx.gasLimit || 0, "gasLimit"),
+        ((tx.to != null) ? (0, index_js_1.getAddress)(tx.to) : "0x"),
+        formatNumber(tx.value || 0, "value"),
+        (tx.data || "0x"),
+        (formatAccessList(tx.accessList || [])),
+        ((tx.incentiveAddress != null) ? (0, index_js_1.getAddress)(tx.incentiveAddress) : "0x"),
+    ];
+    if (sig) {
+        fields.push(formatNumber(sig.yParity, "yParity"));
+        fields.push((0, index_js_3.toBeArray)(sig.r));
+        fields.push((0, index_js_3.toBeArray)(sig.s));
+    }
+    return (0, index_js_3.concat)(["0x03", (0, index_js_3.encodeRlp)(fields)]);
 }
 function _parseEip2930(data) {
     const fields = (0, index_js_3.decodeRlp)((0, index_js_3.getBytes)(data).slice(1));
@@ -269,6 +316,7 @@ class Transaction {
     #chainId;
     #sig;
     #accessList;
+    #incentiveAddress;
     /**
      *  The transaction type.
      *
@@ -295,6 +343,10 @@ class Transaction {
             case "eip-1559":
                 this.#type = 2;
                 break;
+            case 3:
+            case "incentiveTx":
+                this.#type = 3;
+                break;
             default:
                 (0, index_js_3.assertArgument)(false, "unsupported transaction type", "type", value);
         }
@@ -307,6 +359,7 @@ class Transaction {
             case 0: return "legacy";
             case 1: return "eip-2930";
             case 2: return "eip-1559";
+            case 3: return "incentiveTx";
         }
         return null;
     }
@@ -423,6 +476,14 @@ class Transaction {
         this.#accessList = (value == null) ? null : (0, accesslist_js_1.accessListify)(value);
     }
     /**
+    *  The ``to`` address for the transaction or ``null`` if the
+    *  transaction is an ``init`` transaction.
+    */
+    get incentiveAddress() { return this.#incentiveAddress; }
+    set incentiveAddress(value) {
+        this.#incentiveAddress = (value == null) ? null : (0, index_js_1.getAddress)(value);
+    }
+    /**
      *  Creates a new Transaction with default values.
      */
     constructor() {
@@ -438,6 +499,7 @@ class Transaction {
         this.#chainId = BigInt(0);
         this.#sig = null;
         this.#accessList = null;
+        this.#incentiveAddress = null;
     }
     /**
      *  The transaction hash, if signed. Otherwise, ``null``.
@@ -500,6 +562,8 @@ class Transaction {
                 return _serializeEip2930(this, this.signature);
             case 2:
                 return _serializeEip1559(this, this.signature);
+            case 3:
+                return _serializeIncentiveTx(this, this.signature);
         }
         (0, index_js_3.assert)(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: ".serialized" });
     }
@@ -517,6 +581,8 @@ class Transaction {
                 return _serializeEip2930(this);
             case 2:
                 return _serializeEip1559(this);
+            case 3:
+                return _serializeIncentiveTx(this);
         }
         (0, index_js_3.assert)(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: ".unsignedSerialized" });
     }
@@ -653,6 +719,7 @@ class Transaction {
             switch (payload[0]) {
                 case 1: return Transaction.from(_parseEip2930(payload));
                 case 2: return Transaction.from(_parseEip1559(payload));
+                case 3: return Transaction.from(_parseIncentiveTx(payload));
             }
             (0, index_js_3.assert)(false, "unsupported transaction type", "UNSUPPORTED_OPERATION", { operation: "from" });
         }
@@ -692,6 +759,9 @@ class Transaction {
         }
         if (tx.accessList != null) {
             result.accessList = tx.accessList;
+        }
+        if (tx.incentiveAddress != null) {
+            result.incentiveAddress = tx.incentiveAddress;
         }
         if (tx.hash != null) {
             (0, index_js_3.assertArgument)(result.isSigned(), "unsigned transaction cannot define hash", "tx", tx);
